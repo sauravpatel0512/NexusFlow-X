@@ -50,6 +50,8 @@ See **[docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)** for a full 5-minute walkthrou
 
 **Recovery / checkpoints:** [docs/RECOVERY.md](docs/RECOVERY.md)
 
+**Steady progress (14-day plan):** [docs/CONTRIBUTION_PLAN_14D.md](docs/CONTRIBUTION_PLAN_14D.md)
+
 ## Layout
 
 | Path | Role |
