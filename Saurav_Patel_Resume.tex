@@ -1,0 +1,161 @@
+%-------------------------
+% Resume in LaTeX
+% Author: Saurav Patel
+%-------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\input{glyphtounicode}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Adjust margins
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-.5in}
+\addtolength{\textheight}{1.0in}
+
+\urlstyle{same}
+
+\flushbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Sections formatting
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+
+\newcommand{\resumeItem}[1]{
+  \item\small{
+    {#1 \vspace{-2pt}}
+  }
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
+
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}[leftmargin=0.18in, itemsep=1pt, topsep=2pt]}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+%----------HEADING----------
+\begin{center}
+    \textbf{\Huge \scshape Saurav Patel} \\ \vspace{1pt}
+    \small Bedford, TX $|$
+    \small 682-557-2475 $|$
+    \href{mailto:sauravpatel0512@gmail.com}{\underline{sauravpatel0512@gmail.com}} $|$
+    \href{mailto:srp5166@mavs.uta.edu}{\underline{srp5166@mavs.uta.edu}} \\
+    \href{https://linkedin.com/in/sauravpatel0512}{\underline{linkedin.com/in/sauravpatel0512}} $|$
+    \href{https://github.com/sauravpatel0512}{\underline{github.com/sauravpatel0512}}
+\end{center}
+
+%-----------SUMMARY-----------
+\section{Summary}
+Computer Science undergraduate targeting Data Engineering internships, with hands-on experience building batch and streaming data pipelines using Spark, Airflow, dbt, SQL, and Docker, plus data quality testing, CI/CD, and analytics dashboards.
+
+%-----------EDUCATION-----------
+\section{Education}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {The University of Texas at Arlington}{Arlington, TX}
+      {Bachelor of Science in Computer Science; GPA: 3.52/4.0}{Aug 2024 -- May 2028}
+  \resumeSubHeadingListEnd
+
+%-----------TECHNICAL SKILLS-----------
+\section{Technical Skills}
+ \begin{itemize}[leftmargin=0.15in, label={}]
+    \small{\item{
+     \textbf{Languages}{: Python, SQL, Bash} \\
+     \textbf{Data Engineering}{: PySpark (Structured Streaming), Apache Kafka, Apache Airflow, dbt Core, Apache Iceberg, Project Nessie, Trino} \\
+     \textbf{Databases \& Storage}{: PostgreSQL, MinIO, DuckDB, MongoDB, Parquet} \\
+     \textbf{DevOps \& Tools}{: Docker, Docker Compose, Git, GitHub Actions (CI/CD), Makefile, Linux} \\
+     \textbf{Analytics \& BI}{: Power BI (DAX), Streamlit, Metabase, pandas, Excel}
+    }}
+ \end{itemize}
+
+%-----------EXPERIENCE-----------
+\section{Experience}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {Data Analyst Trainee}{Mar 2023 -- Aug 2023}
+      {WELTEC Institute}{Vadodara, India}
+      \resumeItemListStart
+        \resumeItem{Wrote 30+ optimized SQL queries across 10+ relational tables to extract and transform retail and operational data, improving reporting efficiency and reducing manual effort}
+        \resumeItem{Built 5 interactive Power BI dashboards with drill-down filters and DAX measures, enabling visibility into 8 key business KPIs across sales, inventory, and operations}
+        \resumeItem{Processed and cleaned 100K+ row datasets using Python (Pandas, NumPy) and Excel, identifying data inconsistencies and improving downstream data quality}
+        \resumeItem{Designed repeatable ETL workflows to transform flat files into analytics-ready datasets, reducing prep time and improving reporting consistency}
+      \resumeItemListEnd
+  \resumeSubHeadingListEnd
+
+%-----------PROJECTS-----------
+\section{Projects}
+    \resumeSubHeadingListStart
+      \resumeProjectHeading
+          {\textbf{NexusFlow-X -- Real-Time Streaming Data Platform} $|$ \emph{PySpark, Kafka, Docker, DuckDB, Streamlit}}{\href{https://github.com/sauravpatel0512}{\underline{GitHub}}}
+          \resumeItemListStart
+            \resumeItem{Built an end-to-end Kafka + Spark Structured Streaming pipeline processing 40,000+ IoT events from 100 devices across 6 event types}
+            \resumeItem{Implemented Bronze $\rightarrow$ Silver $\rightarrow$ Gold layers with data quality checks and delivered DuckDB + Streamlit analytics with sub-5-second query latency}
+            \resumeItem{Containerized the stack with Docker and added GitHub Actions tests to validate schema contracts and pipeline reliability}
+          \resumeItemListEnd
+      \resumeProjectHeading
+          {\textbf{OlistFlow -- Batch ELT Analytics Engineering Platform} $|$ \emph{Airflow, dbt, PostgreSQL, Metabase, Docker}}{\href{https://github.com/sauravpatel0512}{\underline{GitHub}}}
+          \resumeItemListStart
+            \resumeItem{Built Airflow ELT pipelines to ingest Olist CSVs and IBGE APIs, enriching seller analytics with state-level population and regional context}
+            \resumeItem{Modeled a Kimball-style PostgreSQL warehouse with dbt and implemented 30+ tests plus CI quality gates to protect fact-grain integrity}
+            \resumeItem{Published marts for regional revenue, category performance, and delivery KPIs to support business-facing dashboard analysis}
+          \resumeItemListEnd
+      \resumeProjectHeading
+          {\textbf{IceFlow -- Local Lakehouse with Iceberg + Trino} $|$ \emph{PyIceberg, Trino, MinIO, Nessie, MongoDB, Great Expectations, Streamlit}}{\href{https://github.com/sauravpatel0512}{\underline{GitHub}}}
+          \resumeItemListStart
+            \resumeItem{Engineered a zero-cost local lakehouse ingesting NYC taxi and weather data into Apache Iceberg tables on MinIO with Nessie cataloging}
+            \resumeItem{Built Great Expectations quality checks and Trino-powered marts with a Streamlit dashboard to quantify rain-demand lift and business impact}
+            \resumeItem{Tracked pipeline runs in MongoDB and automated local workflows with Makefile for reproducible development and demo readiness}
+          \resumeItemListEnd
+    \resumeSubHeadingListEnd
+
+%-------------------------------------------
+\end{document}
