@@ -25,7 +25,7 @@ def load_quality_rules(rules_path="ingestion/quality_rules.yaml"):
     if not os.path.exists(rules_path):
         logger.warning(f"Quality rules file not found: {rules_path}")
         return {}
-    with open(rules_path, "r") as f:
+    with open(rules_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 # ================================
@@ -33,12 +33,19 @@ def load_quality_rules(rules_path="ingestion/quality_rules.yaml"):
 # ================================
 def validate_schema(df: DataFrame, expected_fields: list):
     actual_fields = set(df.columns)
-    missing = set(expected_fields) - actual_fields
-    extra = actual_fields - set(expected_fields)
+    expected = set(expected_fields)
+    missing = expected - actual_fields
+    extra = actual_fields - expected
     if missing:
-        logger.error(f"Missing fields: {missing}")
+        logger.error(
+            "Schema validation failed: missing required fields: %s",
+            sorted(missing),
+        )
     if extra:
-        logger.warning(f"Extra fields: {extra}")
+        logger.warning(
+            "Schema validation: unexpected extra fields: %s",
+            sorted(extra),
+        )
     return not missing
 
 # ================================
@@ -76,9 +83,11 @@ def quarantine_bad_records(df: DataFrame, rules: dict, quarantine_path: str):
         if field in df.columns:
             out = df.filter((col(field) < min_val) | (col(field) > max_val))
             bad = out if bad is None else bad.union(out)
-    if bad is not None and bad.count() > 0:
-        logger.info(f"Quarantining {bad.count()} bad records to {quarantine_path}")
-        bad.write.mode("append").parquet(quarantine_path)
+    if bad is not None:
+        n = bad.count()
+        if n > 0:
+            logger.info("Quarantining %s bad records to %s", n, quarantine_path)
+            bad.write.mode("append").parquet(quarantine_path)
     return bad
 
 # ================================

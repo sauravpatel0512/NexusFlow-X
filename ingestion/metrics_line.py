@@ -1,4 +1,8 @@
-"""Append one NDJSON line per micro-batch to data/metrics/pipeline_metrics.jsonl."""
+"""Append one NDJSON line per micro-batch to data/metrics/pipeline_metrics.jsonl.
+
+Each line is a JSON object: ``ts`` (Unix epoch seconds), ``layer``, ``batch_id``,
+``row_count``, optional ``error``, optional ``extra``.
+"""
 from __future__ import annotations
 
 import json
@@ -31,4 +35,5 @@ def append_pipeline_metric(
     metrics_dir.mkdir(parents=True, exist_ok=True)
     path = metrics_dir / FILENAME
     line = json.dumps(payload, separators=(",", ":")) + "\n"
-    path.open("a", encoding="utf-8").write(line)
+    with path.open("a", encoding="utf-8") as f:
+        f.write(line)
