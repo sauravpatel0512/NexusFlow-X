@@ -24,6 +24,7 @@ from ingestion.data_quality import (
 )
 from ingestion.metrics_line import append_pipeline_metric
 from ingestion.paths import data_root, quality_rules_path
+from ingestion.schemas import silver_validate_fields
 
 logger = logging.getLogger(__name__)
 
@@ -66,18 +67,7 @@ quarantine_path = str(root / "quarantine" / "silver")
 
 rules = load_quality_rules(str(quality_rules_path()))
 
-expected_fields = [
-    "event_id",
-    "timestamp",
-    "event_type",
-    "source",
-    "status",
-    "distance",
-    "temperature",
-    "amount",
-    "duration",
-    "note",
-]
+expected_fields = silver_validate_fields()
 
 
 def flatten_and_clean(df):

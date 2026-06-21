@@ -26,6 +26,7 @@ from ingestion.data_quality import (
 )
 from ingestion.metrics_line import append_pipeline_metric
 from ingestion.paths import data_root, quality_rules_path
+from ingestion.schemas import bronze_validate_fields
 
 logger = logging.getLogger(__name__)
 
@@ -73,15 +74,7 @@ bronze_path = str(root / "bronze")
 # Structured Streaming checkpoint (offsets + progress). Move/delete only when you want a new query run identity or replay strategy.
 checkpoint_path = str(root / "checkpoints" / "bronze")
 
-expected_fields = [
-    "event_id",
-    "timestamp",
-    "event_type",
-    "source",
-    "status",
-    "metrics",
-    "extra",
-]
+expected_fields = bronze_validate_fields()
 
 df_raw = (
     spark.readStream.format("kafka")
