@@ -12,33 +12,18 @@ Local-first, Docker-based **streaming data platform**: synthetic events → **Ka
 ## Architecture
 
 ```mermaid
-flowchart TB
-  subgraph ingest["1 · Ingest"]
-    Producer["Producer<br/>synthetic JSON"]
-    Kafka["Kafka KRaft<br/>nexusflow-events"]
-    Producer -->|produce| Kafka
-  end
-
-  subgraph lake["2 · Medallion lake on Parquet"]
-    Bronze["Bronze<br/>raw events"]
-    Silver["Silver<br/>flatten + DQ"]
-    Gold["Gold<br/>hourly aggregates"]
-    Quarantine["Quarantine<br/>out-of-range rows"]
-    Kafka -->|"Structured Streaming"| Bronze
-    Bronze --> Silver
-    Silver -->|"1h tumbling windows"| Gold
-    Silver -.->|"failed quality rules"| Quarantine
-  end
-
-  subgraph serve["3 · Analytics"]
-    Metrics["pipeline_metrics.jsonl"]
-    DuckDB["DuckDB<br/>read_parquet"]
-    Dashboard["Streamlit dashboard"]
-    Bronze & Silver & Gold -->|NDJSON per micro-batch| Metrics
-    Gold --> DuckDB
-    DuckDB --> Dashboard
-    Metrics --> Dashboard
-  end
+flowchart LR
+  Producer["Producer<br>synthetic JSON"] -->|JSON| Kafka["Kafka KRaft<br>nexusflow-events"]
+  Kafka -->|"Spark Streaming"| Bronze["Bronze<br>raw Parquet"]
+  Bronze -->|"flatten + DQ"| Silver["Silver<br>clean Parquet"]
+  Silver -->|"1h windows"| Gold["Gold<br>fact_events_hourly"]
+  Silver -.-> Quarantine["Quarantine"]
+  Gold --> DuckDB["DuckDB"]
+  DuckDB --> Dashboard["Streamlit"]
+  Bronze --> Metrics["metrics.jsonl"]
+  Silver --> Metrics
+  Gold --> Metrics
+  Metrics --> Dashboard
 ```
 
 | Layer | What it proves |
