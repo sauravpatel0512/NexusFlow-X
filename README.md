@@ -7,28 +7,62 @@
 [![Kafka](https://img.shields.io/badge/Apache_Kafka-KRaft-231F20.svg?logo=apachekafka&logoColor=white)](https://kafka.apache.org)
 [![Spark](https://img.shields.io/badge/Apache_Spark-PySpark-E25A1C.svg?logo=apachespark&logoColor=white)](https://spark.apache.org)
 
-Local-first, Docker-based **streaming data platform**: synthetic events → **Kafka** → **Spark Structured Streaming** → **Parquet** (Bronze → Silver → Gold) → **DuckDB analytics** and **Streamlit dashboard**, with YAML-driven data quality enforcement and quarantine paths.
+Local-first, Docker-based **streaming data platform**: synthetic events → **Kafka** → **Spark Structured Streaming** → **Parquet** (Bronze → Silver → Gold) → **DuckDB** + **Streamlit**, with YAML data quality and quarantine.
+
+## Architecture
+
+```mermaid
+flowchart TB
+  subgraph ingest["1 · Ingest"]
+    Producer["Producer<br/>synthetic JSON"]
+    Kafka["Kafka KRaft<br/>nexusflow-events"]
+    Producer -->|produce| Kafka
+  end
+
+  subgraph lake["2 · Medallion lake on Parquet"]
+    Bronze["Bronze<br/>raw events"]
+    Silver["Silver<br/>flatten + DQ"]
+    Gold["Gold<br/>hourly aggregates"]
+    Quarantine["Quarantine<br/>out-of-range rows"]
+    Kafka -->|"Structured Streaming"| Bronze
+    Bronze --> Silver
+    Silver -->|"1h tumbling windows"| Gold
+    Silver -.->|"failed quality rules"| Quarantine
+  end
+
+  subgraph serve["3 · Analytics"]
+    Metrics["pipeline_metrics.jsonl"]
+    DuckDB["DuckDB<br/>read_parquet"]
+    Dashboard["Streamlit dashboard"]
+    Bronze & Silver & Gold -->|NDJSON per micro-batch| Metrics
+    Gold --> DuckDB
+    DuckDB --> Dashboard
+    Metrics --> Dashboard
+  end
+```
+
+| Layer | What it proves |
+|-------|----------------|
+| **Bronze** | Kafka → Parquet with checkpoints / offset resume |
+| **Silver** | Schema flatten + YAML range checks → clean path or quarantine |
+| **Gold** | Hourly window aggregates for BI-style KPIs |
+| **Serve** | DuckDB over Gold + Streamlit health view (0-error runs recorded) |
 
 ## Dashboard
 
 ![NexusFlow-X Streamlit pipeline dashboard](docs/assets/dashboard.png)
 
-Live local run: Gold KPIs by event type, hourly volume, and Bronze / Silver / Gold batch health (0 errors).
+Live local run: Gold KPIs by event type, hourly volume, and Bronze / Silver / Gold batch health (**0 errors**).
 
-## Architecture
+## Debugging notes (real failures)
 
-```mermaid
-flowchart LR
-  Producer["event_generator\n(synthetic)"] -->|JSON| Kafka["Kafka\nnexusflow-events"]
-  Kafka -->|"Spark Streaming"| Bronze["Bronze\n(raw Parquet)"]
-  Bronze -->|"flatten + DQ"| Silver["Silver\n(clean Parquet)"]
-  Silver -->|"1h window agg"| Gold["Gold\nfact_events_hourly"]
-  Silver -->|"out-of-range"| Quarantine["Quarantine\nParquet"]
-  Gold -->|"DuckDB read_parquet"| DuckDB["DuckDB\nKPI queries"]
-  DuckDB --> Dashboard["Streamlit\ndashboard"]
-  Bronze & Silver & Gold -->|"NDJSON"| Metrics["pipeline_metrics.jsonl"]
-  Metrics --> Dashboard
-```
+Data engineering is mostly debugging. Three issues that actually blocked this stack—and what fixed them:
+
+1. **Spark ↔ Kafka connector version skew** — Bronze failed after the Spark image moved to **4.1.x** while `spark-submit --packages` still pinned **`…:4.0.1`**. Symptom: connector resolution / class mismatch at job start. Fix: keep the Kafka package on the **same major.minor** as the image (`spark-sql-kafka-0-10_2.13:4.1.2` in `scripts/spark_submit_bronze.sh`).
+2. **CRLF shell scripts in Linux containers** — Editing `.sh` files on Windows produced `set: pipefail: invalid option name` inside `nexus-spark`. Root cause: `\r` ending the `pipefail` token. Fix: `.gitattributes` forces `*.sh` → LF; strip with `sed -i 's/\r$//' scripts/*.sh` if a checkout is already corrupted.
+3. **Spark 4 duration strings** — Gold died on `Failed to parse time string` when `maxFileAge` used `"10 min"` (space). Spark 4 wants compact forms like **`600s`** / **`10min`**. Same class of bug bites `processingTime` if you invent free-text durations.
+
+Longer write-up: **[docs/FAILURE_NOTES.md](docs/FAILURE_NOTES.md)**. Recovery playbook: **[docs/RECOVERY.md](docs/RECOVERY.md)**.
 
 ## Quick start
 
@@ -36,39 +70,35 @@ flowchart LR
 2. Clone the repo and run:
 
    ```bash
-   docker compose up -d
+   make up    # compose up + create topic nexusflow-events
+   # or: docker compose up -d && make topic
    ```
 
-3. Follow **[docs/LOCAL_RUNBOOK.md](docs/LOCAL_RUNBOOK.md)** for topics, `spark-submit`, and the producer.
-4. After data lands in Gold, query it or open the dashboard:
+3. Follow **[docs/LOCAL_RUNBOOK.md](docs/LOCAL_RUNBOOK.md)** for `spark-submit` and the producer (or **[docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)** for a timed walkthrough with `make gold-fast`).
+4. After data lands in Gold:
 
    ```bash
    pip install -r requirements.txt
-   python analytics/gold_query.py              # CLI KPI report
-   python -m streamlit run analytics/dashboard.py  # browser dashboard at localhost:8501
+   python analytics/gold_query.py
+   python -m streamlit run analytics/dashboard.py   # localhost:8501
    ```
 
-See **[docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)** for a full 5-minute walkthrough.
+**Tests / lint:** `make test` · `make lint` (CI runs both). Deps pinned in `requirements.txt`. PySpark tests skip on Python 3.13+.
 
-**Tests / lint:** `python -m pytest tests/ -q` (`make test`) and `ruff check .` (`make lint`). CI runs lint + pytest on push/PR. PySpark-backed tests are skipped on Python 3.13+ (use 3.10–3.12 or rely on CI). Deps are pinned in `requirements.txt`.
+**Shortcuts:** `make help` — `up`, `topic`, `bronze`, `producer`, `silver`, `gold` / `gold-fast`, `query`, `dashboard`, `test`, `lint`. Use WSL or Git Bash on Windows if `make` is missing.
 
-**Operator shortcuts:** [Makefile](Makefile) — `make help`, `make up` (also creates the Kafka topic), `make topic`, `make bronze`, `make producer`, `make silver`, `make gold` / `make gold-fast`, `make query`, `make dashboard`, `make test`, `make lint`, `make validate`. Use **WSL or Git Bash** on Windows if `make` is not installed.
+**Hooks (optional):** `pip install pre-commit && pre-commit install`
 
-**Optional local hooks:** `pip install pre-commit && pre-commit install` (runs ruff on commit; see [.pre-commit-config.yaml](.pre-commit-config.yaml)).
-
-
-**Recovery / checkpoints:** [docs/RECOVERY.md](docs/RECOVERY.md)
-
-**Steady progress (multi-week, real commits only):** [docs/STEADY_WORK_PLAN.md](docs/STEADY_WORK_PLAN.md) — earlier snapshot: [docs/CONTRIBUTION_PLAN_14D.md](docs/CONTRIBUTION_PLAN_14D.md)
+**Evidence:** [docs/validation-log.md](docs/validation-log.md) · tag [`v1.1.0`](https://github.com/sauravpatel0512/NexusFlow-X/releases/tag/v1.1.0)
 
 ## Layout
 
 | Path | Role |
 |------|------|
-| `ingestion/` | Producer, event generator, data quality helpers, `quality_rules.yaml` |
+| `ingestion/` | Producer, event generator, DQ helpers, `quality_rules.yaml` |
 | `streaming/` | Bronze, Silver, Gold Spark jobs |
 | `analytics/` | DuckDB query layer and Streamlit dashboard |
-| `data/` | Parquet output, checkpoints, metrics (generated at runtime, gitignored) |
+| `data/` | Parquet, checkpoints, metrics (runtime, gitignored) |
 | `tests/` | Unit + contract tests (pytest) |
-| `scripts/` | `spark_submit_*.sh`, `create_topic.sh`, `run_gold.sh` helpers |
-
+| `scripts/` | `spark_submit_*.sh`, `create_topic.sh`, `run_gold.sh` |
+| `docs/` | Runbook, demo, recovery, failure notes, validation log |

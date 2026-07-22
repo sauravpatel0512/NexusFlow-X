@@ -165,6 +165,8 @@ See [validation-log.md](validation-log.md) for a recorded validation run.
 
 ## Troubleshooting
 
+For longer post-mortems of real bugs (connector skew, CRLF, duration parsing), see [FAILURE_NOTES.md](FAILURE_NOTES.md).
+
 ### Port conflicts
 
 Symptoms: `docker compose up` fails with **address already in use** / **bind** errors for **9092**, **29092**, or **4040**.
