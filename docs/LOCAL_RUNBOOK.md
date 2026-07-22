@@ -28,7 +28,7 @@ Run everything from the **repository root**. Data lands under **`data/`** on the
 
 ## Makefile (optional)
 
-From the repo root (Linux / WSL / Git Bash), **`make help`**, **`make up`**, **`make bronze`**, **`make producer`**, **`make silver`**, **`make gold`**, **`make test`**, **`make lint`**, **`make validate`** wrap the same Docker / local commands without `-it` (better for scripts). On Windows without `make`, use the `docker` / `docker exec` commands below.
+From the repo root (Linux / WSL / Git Bash), **`make help`**, **`make up`** (starts compose + topic), **`make topic`**, **`make bronze`**, **`make producer`**, **`make silver`**, **`make gold`** / **`make gold-fast`**, **`make test`**, **`make lint`**, **`make validate`** wrap the same Docker / local commands without `-it` (better for scripts). On Windows without `make`, use the `docker` / `docker exec` commands below.
 
 ## 1. Start the stack
 
@@ -56,9 +56,13 @@ If `docker compose ps` shows **Exit** or **restarting**, fix that before running
 
 ## 2. Kafka topic
 
-Topic **`nexusflow-events`** should exist. If not:
+`make up` also runs **`make topic`** (script [`scripts/create_topic.sh`](../scripts/create_topic.sh)), which waits for Kafka and creates **`nexusflow-events`** if missing.
+
+Manual equivalent:
 
 ```bash
+make topic
+# or:
 docker exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic nexusflow-events --partitions 3 --replication-factor 1
 ```
 
@@ -109,10 +113,18 @@ docker exec -it nexus-spark bash -c 'cd /app && export PYTHONPATH=/app && bash s
 
 ## 6. Gold (Silver → hourly aggregates)
 
-Requires Silver under `data/silver/`. Uses a **5-minute** processing trigger; allow several minutes for output.
+Requires Silver under `data/silver/`. Default trigger is **5 minutes** (`processingTime`). Override with env **`GOLD_PROCESSING_TIME`** (Spark duration string, e.g. `1 minute`).
 
 ```bash
 docker exec -it nexus-spark bash -c 'cd /app && export PYTHONPATH=/app && bash scripts/spark_submit_gold.sh'
+```
+
+Faster demo path (~1 minute wait):
+
+```bash
+make gold-fast
+# or:
+docker exec -e GOLD_PROCESSING_TIME="1 minute" nexus-spark bash -c 'cd /app && export PYTHONPATH=/app && bash scripts/spark_submit_gold.sh'
 ```
 
 From **PowerShell** (same `docker exec` pattern as other sections):
@@ -171,7 +183,7 @@ Symptoms: `docker compose up` fails with **address already in use** / **bind** e
 
 - **`set: pipefail` / `invalid option name` when running `scripts/*.sh` in the container:** The script likely has **Windows CRLF** line endings. Scripts in this repo must use **LF** only (see `.gitattributes`). Re-save the file as LF, or run `sed -i 's/\r$//' scripts/spark_submit_bronze.sh` from WSL on the repo copy under `/mnt/c/...`.
 - **Gold fails with `Failed to parse time string` on `maxFileAge`:** Spark 4 expects durations like **`600s`** or **`10min`**, not **`10 min`** (space). See [streaming/gold_aggregations.py](../streaming/gold_aggregations.py).
-- **Gold “no files yet”:** The job triggers every **5 minutes**; wait at least one full interval before checking `data/gold/fact_events_hourly/`.
+- **Gold “no files yet”:** Default trigger is **5 minutes** (`GOLD_PROCESSING_TIME`). Wait at least one full interval, or use `make gold-fast` / `GOLD_PROCESSING_TIME="1 minute"` for demos.
 
 ## Future / not in this repo
 

@@ -1,11 +1,11 @@
-# NexusFlow-X -- 5-minute demo walkthrough
+# NexusFlow-X -- demo walkthrough (~5 minutes with gold-fast)
 
 Run this on **WSL / Linux** (or Git Bash) from the repo root. Docker Desktop must be running.
 
 ## 1. Start the stack
 
 ```bash
-make up            # docker compose up -d
+make up            # docker compose up -d + create topic nexusflow-events
 docker ps          # expect: kafka, nexus-spark running
 ```
 
@@ -57,10 +57,10 @@ Stop Silver with `Ctrl+C` after a few batches.
 ## 4. Aggregate (Gold)
 
 ```bash
-make gold
+make gold-fast     # GOLD_PROCESSING_TIME=1 minute (default make gold waits ~5 min)
 ```
 
-Gold triggers every **5 minutes**. Wait ~6 minutes, then verify:
+Gold with `gold-fast` triggers every **1 minute**. Wait ~90 seconds, then verify:
 
 ```bash
 ls data/gold/fact_events_hourly/
@@ -154,4 +154,4 @@ Any batch with `"error":` in the NDJSON line indicates a processing failure. The
 
 ---
 
-**Total time:** ~8--10 minutes (mostly waiting for Gold's 5-minute trigger). For a faster demo, reduce Gold's `processingTime` to `"1 minute"` temporarily.
+**Total time:** ~4--6 minutes with `make gold-fast` (1-minute Gold trigger). Default `make gold` waits ~5 minutes per micro-batch — see `GOLD_PROCESSING_TIME` in [LOCAL_RUNBOOK.md](LOCAL_RUNBOOK.md).

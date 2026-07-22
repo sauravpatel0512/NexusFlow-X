@@ -52,7 +52,10 @@ See **[docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)** for a full 5-minute walkthrou
 
 **Tests / lint:** `python -m pytest tests/ -q` (`make test`) and `ruff check .` (`make lint`). CI runs lint + pytest on push/PR. PySpark-backed tests are skipped on Python 3.13+ (use 3.10–3.12 or rely on CI). Deps are pinned in `requirements.txt`.
 
-**Operator shortcuts:** [Makefile](Makefile) — `make help`, `make up`, `make bronze`, `make producer`, `make silver`, `make gold`, `make query`, `make dashboard`, `make test`, `make lint`, `make validate`. Use **WSL or Git Bash** on Windows if `make` is not installed.
+**Operator shortcuts:** [Makefile](Makefile) — `make help`, `make up` (also creates the Kafka topic), `make topic`, `make bronze`, `make producer`, `make silver`, `make gold` / `make gold-fast`, `make query`, `make dashboard`, `make test`, `make lint`, `make validate`. Use **WSL or Git Bash** on Windows if `make` is not installed.
+
+**Optional local hooks:** `pip install pre-commit && pre-commit install` (runs ruff on commit; see [.pre-commit-config.yaml](.pre-commit-config.yaml)).
+
 
 **Recovery / checkpoints:** [docs/RECOVERY.md](docs/RECOVERY.md)
 
@@ -67,5 +70,5 @@ See **[docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)** for a full 5-minute walkthrou
 | `analytics/` | DuckDB query layer and Streamlit dashboard |
 | `data/` | Parquet output, checkpoints, metrics (generated at runtime, gitignored) |
 | `tests/` | Unit + contract tests (pytest) |
-| `scripts/` | `spark_submit_*.sh`, `run_gold.sh` helpers |
+| `scripts/` | `spark_submit_*.sh`, `create_topic.sh`, `run_gold.sh` helpers |
 

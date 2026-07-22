@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import os
 
 from ingestion.metrics_line import append_pipeline_metric
 from ingestion.paths import data_root
@@ -142,9 +143,13 @@ def write_gold_batch(batch_df, batch_id):
             pass
 
 
+# Default 5 minutes. For faster demos: GOLD_PROCESSING_TIME="1 minute"
+_gold_trigger = os.getenv("GOLD_PROCESSING_TIME", "5 minutes").strip() or "5 minutes"
+logger.info("Gold processingTime trigger: %s", _gold_trigger)
+
 query_hourly = (
     df_hourly.writeStream.outputMode("update")
-    .trigger(processingTime="5 minutes")
+    .trigger(processingTime=_gold_trigger)
     .option("checkpointLocation", CHECKPOINT_PATH)
     .foreachBatch(write_gold_batch)
     .start()

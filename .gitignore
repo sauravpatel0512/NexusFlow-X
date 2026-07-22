@@ -6,3 +6,10 @@ __pycache__/
 data/
 .vscode/
 .specify/
+
+# Personal resume lives outside this portfolio repo (see workspace root copy)
+Saurav_Patel_Resume.tex
+*.aux
+*.log
+*.out
+*.synctex.gz

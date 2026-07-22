@@ -4,14 +4,14 @@ NexusFlow-X is a **local-first** portfolio / learning stack: Docker Compose, sin
 
 The items below are **explicitly not implemented** here. They are a map of what a production cut would add—not a commitment or timeline.
 
-## Near-term hardening (still local)
+## Near-term hardening (local)
 
-| Item | Why |
-|------|-----|
-| Topic auto-create / bootstrap script | First-run friction for new clones |
-| Faster demo Gold trigger (documented toggle) | Shorter walkthroughs without editing source |
-| Pinned deps + lint in CI | Reproducible packaging |
-| Formal load / failure injection scripts | Stronger demo of quarantine + recovery |
+| Item | Status |
+|------|--------|
+| Topic auto-create / bootstrap script | Done — `scripts/create_topic.sh` + `make topic` / `make up` |
+| Faster demo Gold trigger (documented toggle) | Done — `GOLD_PROCESSING_TIME` / `make gold-fast` |
+| Pinned deps + lint in CI | Done — `requirements.txt` + ruff |
+| Formal load / failure injection scripts | Optional follow-up |
 
 ## Production-shaped (not in this repo)
 
