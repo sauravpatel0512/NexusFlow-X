@@ -1,6 +1,4 @@
-from pathlib import Path
 
-import pytest
 
 
 def test_data_root_env_override(monkeypatch, tmp_path):

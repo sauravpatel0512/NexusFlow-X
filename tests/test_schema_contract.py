@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import os
 
-from ingestion.event_generator import generate_event
 from ingestion.data_quality import load_quality_rules
+from ingestion.event_generator import generate_event
 from ingestion.schemas import (
     BRONZE_EXTRA_KEYS,
     BRONZE_LEAF_FIELDS,
@@ -17,7 +17,6 @@ from ingestion.schemas import (
     BRONZE_TOP_LEVEL_KEYS,
     SILVER_FLAT_FIELDS,
 )
-
 
 # -----------------------------------------------------------------------
 # 1. Producer payload matches the canonical Bronze schema contract

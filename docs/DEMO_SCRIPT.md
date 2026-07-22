@@ -19,10 +19,11 @@ Terminal 1 -- Bronze streaming job:
 make bronze
 ```
 
-Terminal 2 -- produce synthetic events:
+Terminal 2 -- produce a bounded burst of synthetic events (then exits):
 
 ```bash
-make producer
+make producer ARGS='--batches 30'
+# equivalent: docker exec nexus-spark bash -c 'cd /app && export PYTHONPATH=/app && python3 -m ingestion.producer --batches 30'
 ```
 
 Wait ~30 seconds, then verify:
@@ -34,7 +35,7 @@ ls data/checkpoints/bronze/
 # expect: commits/, offsets/, sources/
 ```
 
-Stop the producer with `Ctrl+C` when enough events are in (default sends a batch then exits).
+Without `ARGS`, `make producer` runs forever (10 events/sec); stop with `Ctrl+C`. Use `--once` for a single batch.
 
 ## 3. Transform (Silver)
 
@@ -109,12 +110,12 @@ Total events (Gold): 1,234
 ## 6. Dashboard
 
 ```bash
-make dashboard     # streamlit run analytics/dashboard.py
+make dashboard     # python -m streamlit run analytics/dashboard.py
 ```
 
 Open [http://localhost:8501](http://localhost:8501) in a browser. You should see four panels: hourly volume bar chart, KPIs by event type, pipeline health timeline, and data quality snapshot.
 
-Take a screenshot for the README.
+Screenshot for the README lives at [`docs/assets/dashboard.png`](assets/dashboard.png).
 
 ## 7. Failure and recovery
 
@@ -124,13 +125,14 @@ Demonstrate checkpoint-based resume:
 # In terminal 1: start Bronze
 make bronze
 # In terminal 2: produce events
-make producer
+make producer ARGS='--batches 20'
 # Wait 15 seconds, then kill Bronze with Ctrl+C
 # Restart Bronze:
 make bronze
 # Produce more events:
-make producer
+make producer ARGS='--batches 20'
 ```
+
 
 Verify that Bronze picks up from the last checkpoint (no duplicate processing of already-committed offsets). Check `data/checkpoints/bronze/commits/` -- the commit number increments across restarts.
 

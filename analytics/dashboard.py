@@ -1,21 +1,23 @@
 """NexusFlow-X analytics dashboard (Streamlit).
 
 Run from repo root:
-    streamlit run analytics/dashboard.py
+    python -m streamlit run analytics/dashboard.py
 """
 from __future__ import annotations
 
+import os
+from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
+from analytics.gold_query import load_metrics_lines, metrics_summary
 
 st.set_page_config(page_title="NexusFlow-X", layout="wide")
 
 # ---------------------------------------------------------------------------
 # Resolve data paths
 # ---------------------------------------------------------------------------
-import os
-
 _DATA_ROOT = Path(os.getenv("NEXUSFLOW_DATA_ROOT", Path(__file__).resolve().parent.parent / "data"))
 _GOLD_DIR = _DATA_ROOT / "gold" / "fact_events_hourly"
 _QUARANTINE_DIR = _DATA_ROOT / "quarantine"
@@ -40,6 +42,7 @@ if not _gold_exists:
 # ---------------------------------------------------------------------------
 st.header("Event volume by hour")
 
+con = None
 if _gold_exists:
     import duckdb
 
@@ -60,7 +63,7 @@ else:
 # ---------------------------------------------------------------------------
 st.header("Average metrics by event type")
 
-if _gold_exists:
+if _gold_exists and con is not None:
     df_kpi = con.sql(f"""
         SELECT
             event_type,
@@ -88,19 +91,14 @@ else:
 # ---------------------------------------------------------------------------
 st.header("Pipeline health")
 
-from analytics.gold_query import load_metrics_lines, metrics_summary
-
 lines = load_metrics_lines()
 if lines:
     summary = metrics_summary(lines)
     cols = st.columns(len(summary))
-    for col_widget, (layer, stats) in zip(cols, summary.items()):
+    for col_widget, (layer, stats) in zip(cols, summary.items(), strict=True):
         col_widget.metric(f"{layer} batches", stats["batches"])
         col_widget.metric(f"{layer} rows", f"{stats['rows']:,}")
         col_widget.metric(f"{layer} errors", stats["errors"])
-
-    import pandas as pd
-    from datetime import datetime
 
     df_timeline = pd.DataFrame(lines)
     df_timeline["timestamp"] = df_timeline["ts"].apply(
@@ -128,7 +126,7 @@ st.header("Data quality snapshot")
 quarantine_files = list(_QUARANTINE_DIR.rglob("*.parquet")) if _QUARANTINE_DIR.exists() else []
 st.metric("Quarantine Parquet files", len(quarantine_files))
 
-if quarantine_files and _gold_exists:
+if quarantine_files and _gold_exists and con is not None:
     q_glob = str(_QUARANTINE_DIR / "**" / "*.parquet")
     try:
         q_count = con.sql(f"SELECT count(*) FROM read_parquet('{q_glob}')").fetchone()[0]

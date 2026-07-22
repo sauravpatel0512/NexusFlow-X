@@ -2,7 +2,6 @@ import uuid
 
 from ingestion.event_generator import generate_event, generate_events_batch
 
-
 REQUIRED_KEYS = {
     "event_id",
     "timestamp",

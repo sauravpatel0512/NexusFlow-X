@@ -2,7 +2,7 @@
 
 Run everything from the **repository root**. Data lands under **`data/`** on the host (mounted as **`/app/data`** in `nexus-spark`).
 
-**Governance:** [.specify/memory/constitution.md](../.specify/memory/constitution.md)
+**Governance:** [CONSTITUTION.md](CONSTITUTION.md)
 
 ## Prerequisites
 
@@ -28,7 +28,7 @@ Run everything from the **repository root**. Data lands under **`data/`** on the
 
 ## Makefile (optional)
 
-From the repo root (Linux / WSL / Git Bash), **`make up`**, **`make bronze`**, **`make producer`**, **`make silver`**, **`make gold`**, **`make test`**, **`make validate`** wrap the same Docker commands without `-it` (better for scripts). On Windows without `make`, use the `docker` / `docker exec` commands below.
+From the repo root (Linux / WSL / Git Bash), **`make help`**, **`make up`**, **`make bronze`**, **`make producer`**, **`make silver`**, **`make gold`**, **`make test`**, **`make lint`**, **`make validate`** wrap the same Docker / local commands without `-it` (better for scripts). On Windows without `make`, use the `docker` / `docker exec` commands below.
 
 ## 1. Start the stack
 
@@ -73,7 +73,7 @@ docker exec -it nexus-spark bash -c 'cd /app && export PYTHONPATH=/app && bash s
 Or one-liner:
 
 ```bash
-docker exec -it nexus-spark bash -c 'cd /app && export PYTHONPATH=/app && /opt/spark/bin/spark-submit --master local[2] --packages org.apache.spark:spark-sql-kafka-0-10_2.13:4.0.1 streaming/bronze_stream.py'
+docker exec -it nexus-spark bash -c 'cd /app && export PYTHONPATH=/app && /opt/spark/bin/spark-submit --master local[2] --packages org.apache.spark:spark-sql-kafka-0-10_2.13:4.1.2 streaming/bronze_stream.py'
 ```
 
 ## 4. Producer
@@ -81,17 +81,23 @@ docker exec -it nexus-spark bash -c 'cd /app && export PYTHONPATH=/app && /opt/s
 **Inside the same Docker network** (recommended):
 
 ```bash
+# Continuous (Ctrl+C to stop):
 docker exec -it nexus-spark bash -c 'cd /app && export PYTHONPATH=/app && python3 -m ingestion.producer'
+
+# Bounded demo burst (send N batches then exit):
+docker exec -it nexus-spark bash -c 'cd /app && export PYTHONPATH=/app && python3 -m ingestion.producer --batches 30'
 ```
 
 **From the host** (outside Docker):
 
 ```bash
 pip install -r requirements.txt
-python -m ingestion.producer
+python -m ingestion.producer              # continuous
+python -m ingestion.producer --once       # one batch, then exit
+python -m ingestion.producer --batches 30
 ```
 
-Uses **`127.0.0.1:29092`** by default.
+Uses **`127.0.0.1:29092`** by default. Default mode is an infinite loop (10 events/sec); use `--once` / `--batches` for a finite run.
 
 ## 5. Silver (Bronze Parquet → Silver Parquet)
 
@@ -140,8 +146,8 @@ Spark UI: **http://localhost:4040** while a job is running.
 
 ## 8. Stack versions (reference)
 
-- Spark **4.0.1**, Scala **2.13** (from `spark:python3` image)
-- Kafka connector package: **`org.apache.spark:spark-sql-kafka-0-10_2.13:4.0.1`**
+- Spark **4.1.2**, Scala **2.13** (from `spark:python3` image)
+- Kafka connector package: **`org.apache.spark:spark-sql-kafka-0-10_2.13:4.1.2`** (must match Spark major.minor)
 
 See [validation-log.md](validation-log.md) for a recorded validation run.
 

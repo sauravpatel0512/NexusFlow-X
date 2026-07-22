@@ -1,5 +1,5 @@
-import os
 import numbers
+import os
 
 import yaml
 
@@ -7,7 +7,7 @@ import yaml
 def test_quality_rules_loads_and_has_numeric_ranges():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     path = os.path.join(root, "ingestion", "quality_rules.yaml")
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
     assert "numeric_ranges" in data
     for key in ("distance", "temperature", "amount", "duration"):
@@ -20,7 +20,7 @@ def test_quality_rules_numeric_ranges_are_consistent_and_numeric():
     """Catch swapped min/max or string bounds from bad YAML edits."""
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     path = os.path.join(root, "ingestion", "quality_rules.yaml")
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
     ranges = data["numeric_ranges"]
     for name, spec in ranges.items():

@@ -3,8 +3,8 @@ Generates synthetic events for the platform.
 """
 
 # Basic event creation function for NexusFlow-X
-import uuid
 import random
+import uuid
 from datetime import datetime, timedelta, timezone
 
 

@@ -5,17 +5,6 @@ import logging
 import os
 from pathlib import Path
 
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, from_json
-
-from pyspark.sql.types import (
-    DoubleType,
-    IntegerType,
-    StringType,
-    StructField,
-    StructType,
-)
-
 from ingestion.data_quality import (
     detect_duplicates,
     load_quality_rules,
@@ -27,6 +16,15 @@ from ingestion.data_quality import (
 from ingestion.metrics_line import append_pipeline_metric
 from ingestion.paths import data_root, quality_rules_path
 from ingestion.schemas import bronze_validate_fields
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, from_json
+from pyspark.sql.types import (
+    DoubleType,
+    IntegerType,
+    StringType,
+    StructField,
+    StructType,
+)
 
 logger = logging.getLogger(__name__)
 

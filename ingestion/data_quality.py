@@ -3,9 +3,10 @@ NexusFlow-X Data Quality Framework
 ----------------------------------
 Reusable validation utilities for Bronze, Silver, and Gold layers.
 """
-import os
-import yaml
 import logging
+import os
+
+import yaml
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, countDistinct
 
@@ -25,7 +26,7 @@ def load_quality_rules(rules_path="ingestion/quality_rules.yaml"):
     if not os.path.exists(rules_path):
         logger.warning(f"Quality rules file not found: {rules_path}")
         return {}
-    with open(rules_path, "r", encoding="utf-8") as f:
+    with open(rules_path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 # ================================

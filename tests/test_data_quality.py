@@ -1,15 +1,5 @@
 import os
 
-import pytest
-from pyspark.sql import Row
-from pyspark.sql.types import (
-    DoubleType,
-    IntegerType,
-    StringType,
-    StructField,
-    StructType,
-)
-
 from ingestion.data_quality import (
     detect_duplicates,
     load_quality_rules,
@@ -17,6 +7,7 @@ from ingestion.data_quality import (
     validate_ranges,
     validate_schema,
 )
+from pyspark.sql import Row
 
 
 def _rules():

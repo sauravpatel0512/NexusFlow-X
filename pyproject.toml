@@ -1,0 +1,25 @@
+[project]
+name = "nexusflow-x"
+version = "1.0.0"
+requires-python = ">=3.10,<3.13"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["ingestion", "streaming", "analytics", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "F",   # pyflakes
+  "I",   # isort
+  "UP",  # pyupgrade
+  "B",   # bugbear
+]
+ignore = [
+  "E501",  # line length — defer to formatter / readability
+  "UP017", # keep timezone.utc for broader Python 3.10 compat in containers
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]

@@ -1,7 +1,10 @@
-kafka-python
-pyspark
-pytest
-pyyaml
-duckdb
-streamlit
-pandas
+# Runtime + test/lint (CI uses Python 3.11). Pins match a known-good local stack;
+# Spark jobs in Docker use image Spark 4.1.2 — keep pyspark in sync.
+kafka-python==2.3.0
+pyspark==4.1.2
+pytest==8.4.2
+PyYAML==6.0.3
+duckdb==1.5.0
+streamlit==1.55.0
+pandas==2.3.3
+ruff==0.15.22

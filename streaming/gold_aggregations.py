@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import logging
 
+from ingestion.metrics_line import append_pipeline_metric
+from ingestion.paths import data_root
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     avg,
@@ -16,7 +18,6 @@ from pyspark.sql.functions import (
     to_timestamp,
     window,
 )
-
 from pyspark.sql.types import (
     DoubleType,
     IntegerType,
@@ -24,9 +25,6 @@ from pyspark.sql.types import (
     StructField,
     StructType,
 )
-
-from ingestion.metrics_line import append_pipeline_metric
-from ingestion.paths import data_root
 
 logger = logging.getLogger(__name__)
 
