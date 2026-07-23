@@ -1,7 +1,6 @@
-"""NexusFlow-X analytics dashboard (Streamlit).
+"""Streamlit dashboard for Gold KPIs and pipeline metrics.
 
-Run from repo root:
-    python -m streamlit run analytics/dashboard.py
+  python -m streamlit run analytics/dashboard.py
 """
 from __future__ import annotations
 
@@ -15,9 +14,6 @@ from analytics.gold_query import load_metrics_lines, metrics_summary
 
 st.set_page_config(page_title="NexusFlow-X", layout="wide")
 
-# ---------------------------------------------------------------------------
-# Resolve data paths
-# ---------------------------------------------------------------------------
 _DATA_ROOT = Path(os.getenv("NEXUSFLOW_DATA_ROOT", Path(__file__).resolve().parent.parent / "data"))
 _GOLD_DIR = _DATA_ROOT / "gold" / "fact_events_hourly"
 _QUARANTINE_DIR = _DATA_ROOT / "quarantine"
@@ -25,11 +21,8 @@ _GOLD_GLOB = str(_GOLD_DIR / "*.parquet")
 
 _gold_exists = _GOLD_DIR.exists() and any(_GOLD_DIR.glob("*.parquet"))
 
-# ---------------------------------------------------------------------------
-# Header
-# ---------------------------------------------------------------------------
-st.title("NexusFlow-X  Pipeline Dashboard")
-st.caption("Local-first streaming lakehouse: Kafka -> Spark -> Bronze -> Silver -> Gold -> here.")
+st.title("NexusFlow-X Pipeline Dashboard")
+st.caption("Kafka -> Spark Bronze/Silver/Gold -> DuckDB / Streamlit")
 
 if not _gold_exists:
     st.warning(
@@ -37,9 +30,6 @@ if not _gold_exists:
         "(see docs/LOCAL_RUNBOOK.md) then refresh this page."
     )
 
-# ---------------------------------------------------------------------------
-# Panel 1 -- Event volume by hour
-# ---------------------------------------------------------------------------
 st.header("Event volume by hour")
 
 con = None
@@ -58,9 +48,6 @@ if _gold_exists:
 else:
     st.info("Waiting for Gold data.")
 
-# ---------------------------------------------------------------------------
-# Panel 2 -- KPIs by event_type
-# ---------------------------------------------------------------------------
 st.header("Average metrics by event type")
 
 if _gold_exists and con is not None:
@@ -86,9 +73,6 @@ if _gold_exists and con is not None:
 else:
     st.info("Waiting for Gold data.")
 
-# ---------------------------------------------------------------------------
-# Panel 3 -- Pipeline health (from metrics JSONL)
-# ---------------------------------------------------------------------------
 st.header("Pipeline health")
 
 lines = load_metrics_lines()
@@ -118,9 +102,6 @@ if lines:
 else:
     st.info("No pipeline metrics yet (data/metrics/pipeline_metrics.jsonl).")
 
-# ---------------------------------------------------------------------------
-# Panel 4 -- Data quality snapshot
-# ---------------------------------------------------------------------------
 st.header("Data quality snapshot")
 
 quarantine_files = list(_QUARANTINE_DIR.rglob("*.parquet")) if _QUARANTINE_DIR.exists() else []

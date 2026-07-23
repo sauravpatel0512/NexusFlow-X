@@ -1,4 +1,4 @@
-# Data Quality Rules for NexusFlow-X
+# Quality rules for Silver range checks / quarantine
 
 numeric_ranges:
   distance:
@@ -13,5 +13,3 @@ numeric_ranges:
   duration:
     min: 0
     max: 86400
-
-# Add more rules as needed (e.g., categorical values, null checks)

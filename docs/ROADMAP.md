@@ -11,7 +11,7 @@ The items below are **explicitly not implemented** here. They are a map of what 
 | Topic auto-create / bootstrap script | Done — `scripts/create_topic.sh` + `make topic` / `make up` |
 | Faster demo Gold trigger (documented toggle) | Done — `GOLD_PROCESSING_TIME` / `make gold-fast` |
 | Pinned deps + lint in CI | Done — `requirements.txt` + ruff |
-| Formal load / failure injection scripts | Optional follow-up |
+| Formal load / failure injection scripts | Not started |
 
 ## Production-shaped (not in this repo)
 

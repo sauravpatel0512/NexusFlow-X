@@ -1,8 +1,4 @@
-"""
-NexusFlow-X Data Quality Framework
-----------------------------------
-Reusable validation utilities for Bronze, Silver, and Gold layers.
-"""
+"""Schema and numeric range checks for Spark DataFrames."""
 import logging
 import os
 
@@ -10,18 +6,13 @@ import yaml
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, countDistinct
 
-# ================================
-# Setup Logging
-# ================================
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
-# ================================
-# Load Quality Rules
-# ================================
+
 def load_quality_rules(rules_path="ingestion/quality_rules.yaml"):
     if not os.path.exists(rules_path):
         logger.warning(f"Quality rules file not found: {rules_path}")
@@ -29,9 +20,7 @@ def load_quality_rules(rules_path="ingestion/quality_rules.yaml"):
     with open(rules_path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
-# ================================
-# Schema Validation
-# ================================
+
 def validate_schema(df: DataFrame, expected_fields: list):
     actual_fields = set(df.columns)
     expected = set(expected_fields)
@@ -49,9 +38,7 @@ def validate_schema(df: DataFrame, expected_fields: list):
         )
     return not missing
 
-# ================================
-# Numeric Range Validation
-# ================================
+
 def validate_ranges(df: DataFrame, rules: dict):
     for field, rule in rules.get("numeric_ranges", {}).items():
         min_val = rule.get("min")
@@ -59,12 +46,12 @@ def validate_ranges(df: DataFrame, rules: dict):
         if field in df.columns:
             out_of_range = df.filter((col(field) < min_val) | (col(field) > max_val)).count()
             if out_of_range > 0:
-                logger.warning(f"{out_of_range} records in '{field}' out of range [{min_val}, {max_val}]")
+                logger.warning(
+                    f"{out_of_range} records in '{field}' out of range [{min_val}, {max_val}]"
+                )
     return df
 
-# ================================
-# Duplicate Detection
-# ================================
+
 def detect_duplicates(df: DataFrame, id_field="event_id"):
     total = df.count()
     unique = df.select(countDistinct(id_field)).collect()[0][0]
@@ -73,9 +60,7 @@ def detect_duplicates(df: DataFrame, id_field="event_id"):
         logger.warning(f"{dups} duplicate records found on '{id_field}'")
     return dups
 
-# ================================
-# Quarantine Bad Records
-# ================================
+
 def quarantine_bad_records(df: DataFrame, rules: dict, quarantine_path: str):
     bad = None
     for field, rule in rules.get("numeric_ranges", {}).items():
@@ -91,9 +76,7 @@ def quarantine_bad_records(df: DataFrame, rules: dict, quarantine_path: str):
             bad.write.mode("append").parquet(quarantine_path)
     return bad
 
-# ================================
-# Quality Report
-# ================================
+
 def quality_report(df: DataFrame, rules: dict):
     report = {}
     for field, rule in rules.get("numeric_ranges", {}).items():

@@ -1,8 +1,6 @@
-"""Query Gold Parquet outputs and pipeline metrics with DuckDB.
+"""DuckDB queries over Gold Parquet and pipeline_metrics.jsonl.
 
-Usage:
-    python -m analytics.gold_query          # from repo root
-    python analytics/gold_query.py          # direct
+  python analytics/gold_query.py
 """
 from __future__ import annotations
 
@@ -14,7 +12,6 @@ import duckdb
 
 
 def _data_root() -> Path:
-    """Resolve the data directory the same way ingestion/paths.py does."""
     import os
 
     env = os.getenv("NEXUSFLOW_DATA_ROOT")
@@ -31,10 +28,6 @@ def _metrics_path() -> Path:
     return _data_root() / "metrics" / "pipeline_metrics.jsonl"
 
 
-# ---------------------------------------------------------------------------
-# Gold KPI queries
-# ---------------------------------------------------------------------------
-
 def total_events(con: duckdb.DuckDBPyConnection | None = None) -> int:
     con = con or duckdb.connect()
     row = con.sql(
@@ -44,7 +37,6 @@ def total_events(con: duckdb.DuckDBPyConnection | None = None) -> int:
 
 
 def kpis_by_event_type(con: duckdb.DuckDBPyConnection | None = None):
-    """Return a list of dicts: one per event_type with aggregated KPIs."""
     con = con or duckdb.connect()
     return con.sql(f"""
         SELECT
@@ -60,7 +52,6 @@ def kpis_by_event_type(con: duckdb.DuckDBPyConnection | None = None):
 
 
 def hourly_volume(con: duckdb.DuckDBPyConnection | None = None):
-    """Return a DataFrame of event volume per hour-of-day."""
     con = con or duckdb.connect()
     return con.sql(f"""
         SELECT
@@ -71,10 +62,6 @@ def hourly_volume(con: duckdb.DuckDBPyConnection | None = None):
         ORDER BY hour
     """).fetchdf()
 
-
-# ---------------------------------------------------------------------------
-# Pipeline metrics helpers
-# ---------------------------------------------------------------------------
 
 def load_metrics_lines() -> list[dict]:
     p = _metrics_path()
@@ -90,7 +77,6 @@ def load_metrics_lines() -> list[dict]:
 
 
 def metrics_summary(lines: list[dict] | None = None) -> dict:
-    """Summarize pipeline_metrics.jsonl into per-layer stats."""
     lines = lines if lines is not None else load_metrics_lines()
     summary: dict[str, dict] = {}
     for m in lines:
@@ -103,10 +89,6 @@ def metrics_summary(lines: list[dict] | None = None) -> dict:
             summary[layer]["errors"] += 1
     return summary
 
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 def main() -> None:
     gold = Path(_gold_path().replace("*.parquet", ""))
@@ -124,19 +106,19 @@ def main() -> None:
     print(f"\nTotal events (Gold): {total_events(con):,}")
 
     print("\n--- KPIs by event_type ---")
-    df_kpi = kpis_by_event_type(con)
-    print(df_kpi.to_string(index=False))
+    print(kpis_by_event_type(con).to_string(index=False))
 
     print("\n--- Hourly volume ---")
-    df_hour = hourly_volume(con)
-    print(df_hour.to_string(index=False))
+    print(hourly_volume(con).to_string(index=False))
 
     ms = metrics_summary()
     if ms:
         print("\n--- Pipeline batch metrics ---")
         for layer, stats in ms.items():
-            print(f"  {layer}: {stats['batches']} batches, "
-                  f"{stats['rows']:,} rows, {stats['errors']} errors")
+            print(
+                f"  {layer}: {stats['batches']} batches, "
+                f"{stats['rows']:,} rows, {stats['errors']} errors"
+            )
     else:
         print("\nNo pipeline metrics file found yet.")
 
