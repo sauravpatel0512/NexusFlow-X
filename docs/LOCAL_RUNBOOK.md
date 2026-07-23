@@ -189,4 +189,4 @@ Symptoms: `docker compose up` fails with **address already in use** / **bind** e
 
 ## Future / not in this repo
 
-Cloud deploy, Kubernetes, Airflow, Grafana, and full production monitoring are **out of scope** for the local stack. See [specs/production-implementation/ROADMAP.md](../specs/production-implementation/ROADMAP.md).
+Cloud deploy, Kubernetes, Airflow, Grafana, and full production monitoring are **out of scope** for the local stack. See [ROADMAP.md](ROADMAP.md).

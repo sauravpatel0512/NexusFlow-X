@@ -2,12 +2,20 @@ __pycache__/
 *.py[cod]
 *.pyc
 .pytest_cache/
+.ruff_cache/
 
 data/
 .vscode/
-.specify/
 
-# Personal resume lives outside this portfolio repo (see workspace root copy)
+# AI / agent tooling (never commit)
+.cursor/
+.claude/
+.aider*
+.specify/
+AGENTS.md
+CLAUDE.md
+
+# Personal resume lives outside this portfolio repo (workspace root copy)
 Saurav_Patel_Resume.tex
 *.aux
 *.log

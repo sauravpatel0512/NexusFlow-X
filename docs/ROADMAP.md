@@ -30,4 +30,4 @@ The items below are **explicitly not implemented** here. They are a map of what 
 - YAML-driven quality rules and NDJSON batch metrics.
 - Analytics over Gold Parquet without a separate warehouse service.
 
-For how to run and recover the **current** stack, see [docs/LOCAL_RUNBOOK.md](../../docs/LOCAL_RUNBOOK.md) and [docs/RECOVERY.md](../../docs/RECOVERY.md). For a recorded successful run, see [docs/validation-log.md](../../docs/validation-log.md).
+For how to run and recover the **current** stack, see [LOCAL_RUNBOOK.md](LOCAL_RUNBOOK.md) and [RECOVERY.md](RECOVERY.md). For a recorded successful run, see [validation-log.md](validation-log.md).

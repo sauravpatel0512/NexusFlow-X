@@ -55,7 +55,7 @@ Screenshot vs this log: the PNG was taken mid-run (~20k–23k Gold events). Leav
 **Not guaranteed (see also [RECOVERY.md](RECOVERY.md)):**
 
 - No SLA for recovery time or exactly-once end-to-end delivery.
-- Multi-broker Kafka, cloud deploy, Airflow, Grafana, and production monitoring are out of scope — [ROADMAP.md](../specs/production-implementation/ROADMAP.md).
+- Multi-broker Kafka, cloud deploy, Airflow, Grafana, and production monitoring are out of scope — [ROADMAP.md](ROADMAP.md).
 - Exact duplicate behavior after partial deletes of checkpoints vs Parquet requires inspecting Spark checkpoint metadata.
 
 ## How to reproduce
