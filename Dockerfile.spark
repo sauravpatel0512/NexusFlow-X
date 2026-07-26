@@ -6,7 +6,8 @@ ENV JAVA_TOOL_OPTIONS=-Duser.home=/tmp
 
 RUN pip install --no-cache-dir \
     kafka-python \
-    pyyaml
+    pyyaml \
+    jsonschema
 
 WORKDIR /app
 CMD ["sleep", "infinity"]

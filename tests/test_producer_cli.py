@@ -10,6 +10,7 @@ def test_parse_args_defaults():
     assert args.batches is None
     assert args.batch_size == 10
     assert args.sleep == 1.0
+    assert args.inject_poison == 0
 
 
 def test_parse_args_once_and_batches():

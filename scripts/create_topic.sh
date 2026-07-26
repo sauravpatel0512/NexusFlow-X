@@ -1,12 +1,31 @@
 #!/usr/bin/env bash
-# Create nexusflow-events if missing (idempotent). Run after `docker compose up -d`.
+# Create nexusflow-events and nexusflow-events-dlq if missing (idempotent).
+# Run after `docker compose up -d`.
 set -euo pipefail
 
 TOPIC="${KAFKA_TOPIC:-nexusflow-events}"
+DLQ_TOPIC="${KAFKA_DLQ_TOPIC:-nexusflow-events-dlq}"
 BOOTSTRAP="${KAFKA_BOOTSTRAP_INTERNAL:-localhost:9092}"
 PARTITIONS="${KAFKA_TOPIC_PARTITIONS:-3}"
 
-echo "Ensuring Kafka topic '${TOPIC}' exists (bootstrap ${BOOTSTRAP})..."
+ensure_topic() {
+  local name="$1"
+  if docker exec kafka /opt/kafka/bin/kafka-topics.sh \
+    --bootstrap-server "${BOOTSTRAP}" \
+    --list 2>/dev/null | grep -qx "${name}"; then
+    echo "Topic '${name}' already exists."
+    return 0
+  fi
+  docker exec kafka /opt/kafka/bin/kafka-topics.sh \
+    --bootstrap-server "${BOOTSTRAP}" \
+    --create \
+    --topic "${name}" \
+    --partitions "${PARTITIONS}" \
+    --replication-factor 1
+  echo "Created topic '${name}' (${PARTITIONS} partitions)."
+}
+
+echo "Ensuring Kafka topics exist (bootstrap ${BOOTSTRAP})..."
 
 # Wait for Kafka broker to accept connections (up to ~60s).
 for i in $(seq 1 30); do
@@ -22,18 +41,5 @@ for i in $(seq 1 30); do
   sleep 2
 done
 
-if docker exec kafka /opt/kafka/bin/kafka-topics.sh \
-  --bootstrap-server "${BOOTSTRAP}" \
-  --list 2>/dev/null | grep -qx "${TOPIC}"; then
-  echo "Topic '${TOPIC}' already exists."
-  exit 0
-fi
-
-docker exec kafka /opt/kafka/bin/kafka-topics.sh \
-  --bootstrap-server "${BOOTSTRAP}" \
-  --create \
-  --topic "${TOPIC}" \
-  --partitions "${PARTITIONS}" \
-  --replication-factor 1
-
-echo "Created topic '${TOPIC}' (${PARTITIONS} partitions)."
+ensure_topic "${TOPIC}"
+ensure_topic "${DLQ_TOPIC}"

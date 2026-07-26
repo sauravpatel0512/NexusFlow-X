@@ -7,28 +7,32 @@
 [![Kafka](https://img.shields.io/badge/Apache_Kafka-KRaft-231F20.svg?logo=apachekafka&logoColor=white)](https://kafka.apache.org)
 [![Spark](https://img.shields.io/badge/Apache_Spark-PySpark-E25A1C.svg?logo=apachespark&logoColor=white)](https://spark.apache.org)
 
-Local-first, Docker-based **streaming data platform**: synthetic events → **Kafka** → **Spark Structured Streaming** → **Parquet** (Bronze → Silver → Gold) → **DuckDB** + **Streamlit**, with YAML data quality and quarantine.
+Local-first, Docker-based **streaming data platform**: synthetic events → **JSON Schema gate** → **Kafka** (events + DLQ) → **Spark Structured Streaming** → **Parquet** (Bronze → Silver → Gold) → **DuckDB** + **Streamlit**, with YAML data quality and quarantine.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  Producer["Producer<br>synthetic JSON"] -->|JSON| Kafka["Kafka KRaft<br>nexusflow-events"]
+  Producer["Producer<br>JSON Schema"] -->|valid| Kafka["Kafka KRaft<br>nexusflow-events"]
+  Producer -->|poison| DLQ["nexusflow-events-dlq"]
   Kafka -->|"Spark Streaming"| Bronze["Bronze<br>raw Parquet"]
+  Kafka -.->|parse fail| ParseQ["quarantine/bronze_parse"]
   Bronze -->|"flatten + DQ"| Silver["Silver<br>clean Parquet"]
   Silver -->|"1h windows"| Gold["Gold<br>fact_events_hourly"]
-  Silver -.-> Quarantine["Quarantine"]
+  Silver -.-> Quarantine["Range quarantine"]
   Gold --> DuckDB["DuckDB"]
   DuckDB --> Dashboard["Streamlit"]
   Bronze --> Metrics["metrics.jsonl"]
   Silver --> Metrics
   Gold --> Metrics
   Metrics --> Dashboard
+  DLQ --> ConsumeDlq["make dlq"]
 ```
 
 | Layer | What it proves |
 |-------|----------------|
-| **Bronze** | Kafka → Parquet with checkpoints / offset resume |
+| **Contract / DLQ** | JSON Schema producer gate; poison → `nexusflow-events-dlq` (`--inject-poison`, `make dlq`) |
+| **Bronze** | Kafka → Parquet with checkpoints; unparseable rows → `quarantine/bronze_parse` |
 | **Silver** | Schema flatten + YAML range checks → clean path or quarantine |
 | **Gold** | Hourly window aggregates for BI-style KPIs |
 | **Serve** | DuckDB over Gold + Streamlit health view (0-error runs recorded) |
@@ -55,12 +59,13 @@ Longer write-up: **[docs/FAILURE_NOTES.md](docs/FAILURE_NOTES.md)**. Recovery pl
 2. Clone the repo and run:
 
    ```bash
-   make up    # compose up + create topic nexusflow-events
+   make up    # compose up + create nexusflow-events + nexusflow-events-dlq
    # or: docker compose up -d && make topic
    ```
 
 3. Follow **[docs/LOCAL_RUNBOOK.md](docs/LOCAL_RUNBOOK.md)** for `spark-submit` and the producer (or **[docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)** for a timed walkthrough with `make gold-fast`).
-4. After data lands in Gold:
+4. Optional DLQ demo: `make producer ARGS='--inject-poison 5 --once'` then `make dlq`.
+5. After data lands in Gold:
 
    ```bash
    pip install -r requirements.txt
@@ -70,7 +75,7 @@ Longer write-up: **[docs/FAILURE_NOTES.md](docs/FAILURE_NOTES.md)**. Recovery pl
 
 **Tests / lint:** `make test` · `make lint` (CI runs both). Deps pinned in `requirements.txt`. PySpark tests skip on Python 3.13+.
 
-**Shortcuts:** `make help` — `up`, `topic`, `bronze`, `producer`, `silver`, `gold` / `gold-fast`, `query`, `dashboard`, `test`, `lint`. Use WSL or Git Bash on Windows if `make` is missing.
+**Shortcuts:** `make help` — `up`, `topic`, `bronze`, `producer`, `dlq`, `silver`, `gold` / `gold-fast`, `query`, `dashboard`, `test`, `lint`. Use WSL or Git Bash on Windows if `make` is missing.
 
 **Hooks (optional):** `pip install pre-commit && pre-commit install`
 
@@ -80,10 +85,10 @@ Longer write-up: **[docs/FAILURE_NOTES.md](docs/FAILURE_NOTES.md)**. Recovery pl
 
 | Path | Role |
 |------|------|
-| `ingestion/` | Producer, event generator, DQ helpers, `quality_rules.yaml` |
+| `ingestion/` | Producer, JSON Schema (`event_schema.json`), contract/DLQ helpers, DQ, `quality_rules.yaml` |
 | `streaming/` | Bronze, Silver, Gold Spark jobs |
 | `analytics/` | DuckDB query layer and Streamlit dashboard |
 | `data/` | Parquet, checkpoints, metrics (runtime, gitignored) |
 | `tests/` | Unit + contract tests (pytest) |
-| `scripts/` | `spark_submit_*.sh`, `create_topic.sh`, `run_gold.sh` |
+| `scripts/` | `spark_submit_*.sh`, `create_topic.sh`, `consume_dlq.py`, `run_gold.sh` |
 | `docs/` | Runbook, demo, recovery, failure notes, validation log |

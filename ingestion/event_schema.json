@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nexusflow-x.local/schemas/event.json",
+  "title": "NexusFlow event",
+  "description": "Bronze Kafka payload contract. Keep aligned with ingestion/schemas.py.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "timestamp",
+    "event_type",
+    "source",
+    "status",
+    "metrics",
+    "extra"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["distance", "temperature", "amount", "duration"],
+      "properties": {
+        "distance": { "type": "number" },
+        "temperature": { "type": "number" },
+        "amount": { "type": "number" },
+        "duration": { "type": "integer" }
+      }
+    },
+    "extra": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["note"],
+      "properties": {
+        "note": { "type": "string" }
+      }
+    }
+  }
+}

@@ -28,7 +28,7 @@ Run everything from the **repository root**. Data lands under **`data/`** on the
 
 ## Makefile (optional)
 
-From the repo root (Linux / WSL / Git Bash), **`make help`**, **`make up`** (starts compose + topic), **`make topic`**, **`make bronze`**, **`make producer`**, **`make silver`**, **`make gold`** / **`make gold-fast`**, **`make test`**, **`make lint`**, **`make validate`** wrap the same Docker / local commands without `-it` (better for scripts). On Windows without `make`, use the `docker` / `docker exec` commands below.
+From the repo root (Linux / WSL / Git Bash), **`make help`**, **`make up`** (starts compose + topics), **`make topic`**, **`make bronze`**, **`make producer`**, **`make dlq`**, **`make silver`**, **`make gold`** / **`make gold-fast`**, **`make test`**, **`make lint`**, **`make validate`** wrap the same Docker / local commands without `-it` (better for scripts). On Windows without `make`, use the `docker` / `docker exec` commands below.
 
 ## 1. Start the stack
 
@@ -54,16 +54,15 @@ docker compose logs kafka --tail 30
 
 If `docker compose ps` shows **Exit** or **restarting**, fix that before running Spark jobs—usually a port bind failure or an old container name conflict (`docker compose down` then `up -d` again after freeing ports).
 
-## 2. Kafka topic
+## 2. Kafka topics
 
-`make up` also runs **`make topic`** (script [`scripts/create_topic.sh`](../scripts/create_topic.sh)), which waits for Kafka and creates **`nexusflow-events`** if missing.
+`make up` also runs **`make topic`** (script [`scripts/create_topic.sh`](../scripts/create_topic.sh)), which waits for Kafka and creates **`nexusflow-events`** and **`nexusflow-events-dlq`** if missing.
 
 Manual equivalent:
 
 ```bash
 make topic
-# or:
-docker exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic nexusflow-events --partitions 3 --replication-factor 1
+# or create both topics with kafka-topics.sh (partitions=3, rf=1)
 ```
 
 ## 3. Bronze (Kafka → Parquet)
@@ -80,7 +79,9 @@ Or one-liner:
 docker exec -it nexus-spark bash -c 'cd /app && export PYTHONPATH=/app && /opt/spark/bin/spark-submit --master local[2] --packages org.apache.spark:spark-sql-kafka-0-10_2.13:4.1.2 streaming/bronze_stream.py'
 ```
 
-## 4. Producer
+## 4. Producer (JSON Schema + DLQ)
+
+The producer validates each event against [`ingestion/event_schema.json`](../ingestion/event_schema.json). Valid events go to **`nexusflow-events`**; failures are wrapped in a DLQ envelope and sent to **`nexusflow-events-dlq`**.
 
 **Inside the same Docker network** (recommended):
 
@@ -90,6 +91,10 @@ docker exec -it nexus-spark bash -c 'cd /app && export PYTHONPATH=/app && python
 
 # Bounded demo burst (send N batches then exit):
 docker exec -it nexus-spark bash -c 'cd /app && export PYTHONPATH=/app && python3 -m ingestion.producer --batches 30'
+
+# Inject poison payloads into the DLQ, then one valid batch:
+make producer ARGS='--inject-poison 5 --once'
+make dlq ARGS='-n 5'
 ```
 
 **From the host** (outside Docker):
@@ -99,9 +104,13 @@ pip install -r requirements.txt
 python -m ingestion.producer              # continuous
 python -m ingestion.producer --once       # one batch, then exit
 python -m ingestion.producer --batches 30
+python -m ingestion.producer --inject-poison 5 --once
+python scripts/consume_dlq.py -n 5
 ```
 
 Uses **`127.0.0.1:29092`** by default. Default mode is an infinite loop (10 events/sec); use `--once` / `--batches` for a finite run.
+
+**Bronze parse quarantine:** rows on the main topic that fail `from_json` / lack `event_id` are written to `data/quarantine/bronze_parse/` (raw `json_str`) and are **not** appended to Bronze. Range failures still go to `data/quarantine/bronze/`. If you change the Bronze streaming query shape, clear `data/checkpoints/bronze/` before restarting Bronze.
 
 ## 5. Silver (Bronze Parquet → Silver Parquet)
 
