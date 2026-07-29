@@ -68,6 +68,7 @@ KAFKA_TOPIC_EVENTS = "nexusflow-events"
 rules = load_quality_rules(str(quality_rules_path()))
 root = data_root()
 quarantine_path = str(root / "quarantine" / "bronze")
+parse_quarantine_path = str(root / "quarantine" / "bronze_parse")
 bronze_path = str(root / "bronze")
 # Structured Streaming checkpoint (offsets + progress). Move/delete only when you want a new query run identity or replay strategy.
 checkpoint_path = str(root / "checkpoints" / "bronze")
@@ -82,10 +83,9 @@ df_raw = (
     .load()
 )
 
-df_parsed = (
-    df_raw.selectExpr("CAST(value AS STRING) as json_str")
-    .select(from_json(col("json_str"), EVENT_SCHEMA).alias("data"))
-    .select("data.*")
+# Keep raw JSON so unparseable / null-schema rows can be quarantined for replay.
+df_with_parse = df_raw.selectExpr("CAST(value AS STRING) as json_str").withColumn(
+    "data", from_json(col("json_str"), EVENT_SCHEMA)
 )
 
 
@@ -100,15 +100,40 @@ def process_batch(batch_df, batch_id):
     if not batch_df.take(1):
         return
     try:
-        n = batch_df.count()
-        validate_schema(batch_df, expected_fields)
-        flat = _with_flat_metrics(batch_df)
+        # from_json failures / missing event_id → parse quarantine (not Bronze).
+        bad_parse = batch_df.filter(col("data").isNull() | col("data.event_id").isNull())
+        good = batch_df.filter(col("data").isNotNull() & col("data.event_id").isNotNull()).select(
+            "data.*"
+        )
+
+        n_parse_fail = bad_parse.count()
+        if n_parse_fail > 0:
+            logger.info(
+                "Parse quarantine: %s row(s) → %s",
+                n_parse_fail,
+                parse_quarantine_path,
+            )
+            bad_parse.select("json_str").write.mode("append").parquet(parse_quarantine_path)
+
+        if not good.take(1):
+            append_pipeline_metric(
+                "bronze",
+                batch_id,
+                0,
+                extra={"parse_failures": n_parse_fail},
+            )
+            return
+
+        n = good.count()
+        validate_schema(good, expected_fields)
+        flat = _with_flat_metrics(good)
         quarantine_bad_records(flat, rules, quarantine_path)
         validate_ranges(flat, rules)
         detect_duplicates(flat, id_field="event_id")
         quality_report(flat, rules)
-        batch_df.write.mode("append").parquet(bronze_path)
-        append_pipeline_metric("bronze", batch_id, n)
+        good.write.mode("append").parquet(bronze_path)
+        extra = {"parse_failures": n_parse_fail} if n_parse_fail else None
+        append_pipeline_metric("bronze", batch_id, n, extra=extra)
     except Exception as ex:
         logger.exception("Bronze micro-batch %s failed", batch_id)
         try:
@@ -118,15 +143,16 @@ def process_batch(batch_df, batch_id):
 
 
 logger.info(
-    "Bronze stream starting: kafka=%s topic=%s checkpoint=%s parquet_out=%s",
+    "Bronze stream starting: kafka=%s topic=%s checkpoint=%s parquet_out=%s parse_quarantine=%s",
     KAFKA_BOOTSTRAP_SERVERS,
     KAFKA_TOPIC_EVENTS,
     checkpoint_path,
     bronze_path,
+    parse_quarantine_path,
 )
 
 query = (
-    df_parsed.writeStream.foreachBatch(process_batch)
+    df_with_parse.writeStream.foreachBatch(process_batch)
     .option("checkpointLocation", checkpoint_path)
     .start()
 )
