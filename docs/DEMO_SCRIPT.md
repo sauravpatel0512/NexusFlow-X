@@ -37,6 +37,14 @@ ls data/checkpoints/bronze/
 
 Without `ARGS`, `make producer` runs forever (10 events/sec); stop with `Ctrl+C`. Use `--once` for a single batch.
 
+**Optional — JSON Schema / DLQ demo:** inject poison payloads, then confirm depth in the dashboard (Data quality snapshot) or CLI:
+
+```bash
+make producer ARGS='--inject-poison 5 --once'
+make dlq ARGS='-n 5'
+# refresh Streamlit: Kafka DLQ messages metric should be >= 5
+```
+
 ## 3. Transform (Silver)
 
 ```bash

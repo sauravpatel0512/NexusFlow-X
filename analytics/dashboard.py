@@ -104,16 +104,33 @@ else:
 
 st.header("Data quality snapshot")
 
+qcol, dcol = st.columns(2)
 quarantine_files = list(_QUARANTINE_DIR.rglob("*.parquet")) if _QUARANTINE_DIR.exists() else []
-st.metric("Quarantine Parquet files", len(quarantine_files))
+with qcol:
+    st.metric("Quarantine Parquet files", len(quarantine_files))
+    if quarantine_files and _gold_exists and con is not None:
+        q_glob = str(_QUARANTINE_DIR / "**" / "*.parquet")
+        try:
+            q_count = con.sql(f"SELECT count(*) FROM read_parquet('{q_glob}')").fetchone()[0]
+            st.metric("Quarantine rows (total)", f"{q_count:,}")
+        except Exception:
+            st.caption("Could not read quarantine parquet files.")
 
-if quarantine_files and _gold_exists and con is not None:
-    q_glob = str(_QUARANTINE_DIR / "**" / "*.parquet")
+with dcol:
     try:
-        q_count = con.sql(f"SELECT count(*) FROM read_parquet('{q_glob}')").fetchone()[0]
-        st.metric("Quarantine rows (total)", f"{q_count:,}")
-    except Exception:
-        st.caption("Could not read quarantine parquet files.")
+        from ingestion.dlq_stats import fetch_dlq_depth
+
+        depth, dlq_err = fetch_dlq_depth()
+        if depth is not None:
+            st.metric("Kafka DLQ messages", f"{depth:,}")
+            if dlq_err:
+                st.caption(dlq_err)
+        else:
+            st.metric("Kafka DLQ messages", "—")
+            st.caption(dlq_err or "Kafka unreachable")
+    except Exception as ex:
+        st.metric("Kafka DLQ messages", "—")
+        st.caption(f"DLQ stats unavailable: {ex}")
 
 if lines:
     error_lines = [m for m in lines if m.get("error")]
