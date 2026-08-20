@@ -11,6 +11,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 from analytics.gold_query import load_metrics_lines, metrics_summary
+from ingestion.quarantine_stats import quarantine_breakdown, sum_parse_failures
 
 st.set_page_config(page_title="NexusFlow-X", layout="wide")
 
@@ -104,18 +105,28 @@ else:
 
 st.header("Data quality snapshot")
 
-qcol, dcol = st.columns(2)
-quarantine_files = list(_QUARANTINE_DIR.rglob("*.parquet")) if _QUARANTINE_DIR.exists() else []
-with qcol:
-    st.metric("Quarantine Parquet files", len(quarantine_files))
-    if quarantine_files and _gold_exists and con is not None:
+breakdown = quarantine_breakdown(_DATA_ROOT)
+parse_failures = sum_parse_failures(lines)
+total_q_files = sum(stats["files"] for stats in breakdown.values())
+
+st.subheader("Quarantine by layer")
+layer_cols = st.columns(max(len(breakdown), 1))
+for col_widget, (layer, stats) in zip(layer_cols, breakdown.items(), strict=True):
+    col_widget.metric(f"{layer} files", stats["files"])
+
+pcol, tcol, dcol = st.columns(3)
+with pcol:
+    st.metric("Bronze parse_failures (metrics)", f"{parse_failures:,}")
+    st.caption("Sum of extra.parse_failures from pipeline_metrics.jsonl")
+with tcol:
+    st.metric("Quarantine Parquet files", total_q_files)
+    if total_q_files and _gold_exists and con is not None:
         q_glob = str(_QUARANTINE_DIR / "**" / "*.parquet")
         try:
             q_count = con.sql(f"SELECT count(*) FROM read_parquet('{q_glob}')").fetchone()[0]
             st.metric("Quarantine rows (total)", f"{q_count:,}")
         except Exception:
             st.caption("Could not read quarantine parquet files.")
-
 with dcol:
     try:
         from ingestion.dlq_stats import fetch_dlq_depth
