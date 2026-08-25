@@ -95,7 +95,11 @@ docker exec -it nexus-spark bash -c 'cd /app && export PYTHONPATH=/app && python
 # Inject poison payloads into the DLQ, then one valid batch:
 make producer ARGS='--inject-poison 5 --once'
 make dlq ARGS='-n 5'
+make replay-dlq ARGS='--dry-run -n 5'   # classify only
+make replay-dlq ARGS='-n 5'             # republish schema-valid payloads to main topic
 ```
+
+DLQ messages are **not deleted** on replay (local demo; valid replays may duplicate on the main topic). Still-invalid poison stays in the DLQ.
 
 **From the host** (outside Docker):
 

@@ -3,7 +3,7 @@
 
 .DEFAULT_GOAL := help
 
-.PHONY: help up down topic bronze silver gold producer dlq test validate query dashboard lint
+.PHONY: help up down topic bronze silver gold producer dlq replay-dlq test validate query dashboard lint
 
 help:
 	@echo "NexusFlow-X targets:"
@@ -13,6 +13,7 @@ help:
 	@echo "  make gold-fast       Gold with GOLD_PROCESSING_TIME='1 minute' (demo)"
 	@echo "  make producer        Produce events (ARGS='--batches 30' or ARGS='--once')"
 	@echo "  make dlq             Print recent DLQ messages (ARGS='-n 5')"
+	@echo "  make replay-dlq      Revalidate + replay valid DLQ payloads (ARGS='--dry-run -n 5')"
 	@echo "  make test            pytest"
 	@echo "  make lint            ruff check ."
 	@echo "  make validate        Parse quality_rules.yaml"
@@ -50,6 +51,9 @@ producer:
 # Optional: make dlq ARGS='-n 20'
 dlq:
 	docker exec nexus-spark bash -c "cd /app && export PYTHONPATH=/app && python3 scripts/consume_dlq.py $(ARGS)"
+
+replay-dlq:
+	docker exec nexus-spark bash -c "cd /app && export PYTHONPATH=/app && python3 scripts/replay_dlq.py $(ARGS)"
 
 test:
 	python -m pytest tests/ -q
