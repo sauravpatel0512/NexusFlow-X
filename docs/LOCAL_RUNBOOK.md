@@ -97,6 +97,7 @@ make producer ARGS='--inject-poison 5 --once'
 make dlq ARGS='-n 5'
 make replay-dlq ARGS='--dry-run -n 5'   # classify only
 make replay-dlq ARGS='-n 5'             # republish schema-valid payloads to main topic
+make soak ARGS='--duration 30 --rate 50 --poison-every 10'  # bounded soak + optional poison mix
 ```
 
 DLQ messages are **not deleted** on replay (local demo; valid replays may duplicate on the main topic). Still-invalid poison stays in the DLQ.

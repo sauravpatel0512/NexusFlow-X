@@ -13,7 +13,7 @@ The items below are **explicitly not implemented** here. They are a map of what 
 | Pinned deps + lint in CI | Done — `requirements.txt` + ruff |
 | JSON Schema contract + Kafka DLQ | Done — `ingestion/event_schema.json`, producer gate, `nexusflow-events-dlq`, `make dlq` / `--inject-poison` |
 | Bronze parse-failure quarantine | Done — `data/quarantine/bronze_parse/` for null/`from_json` failures |
-| Formal load / failure injection scripts | Partial — `--inject-poison` covers schema poison; load soak scripts not started |
+| Formal load / failure injection scripts | Done — `make soak` / `scripts/soak_load.py` (duration + rate + `--poison-every`); `--inject-poison` remains for one-shot demos |
 
 ## Production-shaped (not in this repo)
 
