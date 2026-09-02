@@ -6,16 +6,16 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
-from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 from analytics.gold_query import load_metrics_lines, metrics_summary
+from ingestion.paths import data_root
 from ingestion.quarantine_stats import quarantine_breakdown, sum_parse_failures
 
 st.set_page_config(page_title="NexusFlow-X", layout="wide")
 
-_DATA_ROOT = Path(os.getenv("NEXUSFLOW_DATA_ROOT", Path(__file__).resolve().parent.parent / "data"))
+_DATA_ROOT = data_root()
 _GOLD_DIR = _DATA_ROOT / "gold" / "fact_events_hourly"
 _QUARANTINE_DIR = _DATA_ROOT / "quarantine"
 _GOLD_GLOB = str(_GOLD_DIR / "*.parquet")

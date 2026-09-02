@@ -1,23 +1,17 @@
 """Quarantine layout helpers (by medallion layer) + parse_failures from metrics extra."""
 from __future__ import annotations
 
-import os
 from collections.abc import Iterable, Mapping
 from pathlib import Path
+
+from ingestion.paths import data_root
 
 # Known quarantine subdirs written by Bronze/Silver streams (see LOCAL_RUNBOOK).
 KNOWN_LAYERS = ("bronze", "bronze_parse", "silver")
 
 
-def _data_root() -> Path:
-    env = os.getenv("NEXUSFLOW_DATA_ROOT")
-    if env:
-        return Path(env)
-    return Path(__file__).resolve().parent.parent / "data"
-
-
-def quarantine_root(data_root: Path | None = None) -> Path:
-    return (data_root or _data_root()) / "quarantine"
+def quarantine_root(root: Path | None = None) -> Path:
+    return (root or data_root()) / "quarantine"
 
 
 def count_parquet_files(layer_dir: Path) -> int:

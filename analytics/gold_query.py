@@ -10,22 +10,15 @@ from pathlib import Path
 
 import duckdb
 
-
-def _data_root() -> Path:
-    import os
-
-    env = os.getenv("NEXUSFLOW_DATA_ROOT")
-    if env:
-        return Path(env)
-    return Path(__file__).resolve().parent.parent / "data"
+from ingestion.paths import data_root
 
 
 def _gold_path() -> str:
-    return str(_data_root() / "gold" / "fact_events_hourly" / "*.parquet")
+    return str(data_root() / "gold" / "fact_events_hourly" / "*.parquet")
 
 
 def _metrics_path() -> Path:
-    return _data_root() / "metrics" / "pipeline_metrics.jsonl"
+    return data_root() / "metrics" / "pipeline_metrics.jsonl"
 
 
 def total_events(con: duckdb.DuckDBPyConnection | None = None) -> int:
