@@ -120,3 +120,20 @@ def run_soak(plan: SoakPlan, *, producer: Any = None) -> dict[str, float | int]:
         "elapsed_sec": round(elapsed, 3),
         "eps": round(events / elapsed, 2),
     }
+
+
+def main(argv: list[str] | None = None) -> None:
+    plan = build_plan(parse_args(argv))
+    print(
+        f"Soak starting: duration={plan.duration_sec}s batch_size={plan.batch_size} "
+        f"sleep={plan.sleep_sec}s poison_every={plan.poison_every}"
+    )
+    stats = run_soak(plan)
+    print(
+        f"Soak done: batches={stats['batches']} ok={stats['ok']} dlq={stats['dlq']} "
+        f"poison={stats['poison']} elapsed={stats['elapsed_sec']}s eps={stats['eps']}"
+    )
+
+
+if __name__ == "__main__":
+    main()

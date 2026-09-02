@@ -58,7 +58,7 @@ replay-dlq:
 
 # Optional: make soak ARGS='--duration 30 --batch-size 50 --rate 100 --poison-every 10'
 soak:
-	docker exec nexus-spark bash -c "cd /app && export PYTHONPATH=/app && python3 scripts/soak_load.py $(ARGS)"
+	docker exec nexus-spark bash -c "cd /app && export PYTHONPATH=/app && python3 -m ingestion.soak_load $(ARGS)"
 
 test:
 	python -m pytest tests/ -q
